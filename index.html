@@ -1135,9 +1135,8 @@ const SFX = {
 
 /* 各音效音量（0～1），想調大調小改這裡 */
 const SFX_VOL = {
-  drop: 0.9,
   rain: 0.4,
-  forest: 0.55
+  forest: 0.275
 };
 
 function sfxUnlock() {
@@ -1319,9 +1318,7 @@ function goP2() {
 
   p1.classList.add('out');
 
-  /* 聲音分開出現：先只有水滴聲，換到雨城後才出現雨聲與腳步 */
-  sfxPlay('drop', SFX_VOL.drop);
-
+  /* 聲音分開出現：換到雨城後才出現雨聲 */
   setTimeout(() => {
     p1.style.display = 'none';
     p2.classList.add('in');
@@ -1339,9 +1336,8 @@ function goP3() {
 
   p2.classList.add('out');
 
-  /* 聲音分開出現：雨聲先收掉，只剩水滴聲，換到地圖後才出現蟲鳴鳥叫 */
+  /* 聲音分開出現：雨聲先收掉，換到地圖後才出現蟲鳴鳥叫 */
   sfxLoopStop('rain', 0.25);
-  setTimeout(() => sfxPlay('drop', SFX_VOL.drop), 250);
 
   setTimeout(() => {
     p2.style.display = 'none';
