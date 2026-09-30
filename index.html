@@ -1100,7 +1100,7 @@ canvas.fx{position:absolute;inset:0;width:100%;height:100%;pointer-events:none}
   <div class="veil"></div>
   <button id="city-btn" type="button">在陰鬱街道下，隱藏的是甦醒的惡…</button>
   <!-- 雨聲授權標註：CC BY 3.0 需要標註作者 -->
-  <div class="sound-credit">雨聲：“11 Minutes of Rain” by DeantheDinosauce（Freesound・CC BY 3.0）</div>
+  <div class="sound-credit">城市背景聲取自 “11 Minutes of Rain” by DeantheDinosauce（Freesound・CC BY 3.0）</div>
 </section>
 
 <section id="p3" class="page" aria-label="霧林地圖">
@@ -1147,7 +1147,7 @@ const SFX = {
     key3: 'assets/sfx/key3.mp3',
     key4: 'assets/sfx/key4.mp3',
     rain: 'assets/sfx/rain_city.mp3',
-    beast: 'assets/sfx/beast.mp3',
+    forest: 'assets/sfx/forest.mp3',
     warn: 'assets/warning_loud.mp3'
   }
 };
@@ -1156,8 +1156,8 @@ const SFX = {
 const SFX_VOL = {
   drop: 0.9,
   key: 0.45,
-  rain: 0.6,
-  beast: 0.5
+  rain: 0.4,
+  forest: 0.55
 };
 
 function sfxUnlock() {
@@ -1371,14 +1371,14 @@ function goP3() {
 
   p2.classList.add('out');
 
-  /* 聲音分開出現：雨聲先收掉，只剩水滴聲，換到地圖後才出現獸音 */
+  /* 聲音分開出現：雨聲先收掉，只剩水滴聲，換到地圖後才出現蟲鳴鳥叫 */
   sfxLoopStop('rain', 0.25);
   setTimeout(() => sfxPlay('drop', SFX_VOL.drop), 250);
 
   setTimeout(() => {
     p2.style.display = 'none';
     p3.classList.add('in');
-    sfxLoopStart('beast', SFX_VOL.beast, 3);
+    sfxLoopStart('forest', SFX_VOL.forest, 3);
   }, 1500);
 }
 /* 點擊水滴漣漪：第二頁、第三頁啟用；第四頁說明面板不啟用 */
@@ -1532,8 +1532,8 @@ let warnNode = null;
 function playWarnSound() {
   stopWarnSound();
 
-  /* 警告前先把環境音瞬間切掉，安靜一瞬再爆出來更嚇人 */
-  sfxLoopStop('beast', 0.05);
+  /* 警告前先把地圖的蟲鳴鳥叫瞬間切掉，安靜一瞬再爆出來更嚇人 */
+  sfxLoopStop('forest', 0.05);
 
   const ctx = SFX.ctx;
   const buf = SFX.bufs.warn;
@@ -1593,7 +1593,7 @@ function resetToStart() {
   closeZone();
 
   sfxLoopStop('rain', 0.5);
-  sfxLoopStop('beast', 0.5);
+  sfxLoopStop('forest', 0.5);
 
   p3.classList.remove('in');
   p2.classList.remove('in', 'out');
