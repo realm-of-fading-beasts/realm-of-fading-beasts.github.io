@@ -554,90 +554,77 @@ canvas.fx{position:absolute;inset:0;width:100%;height:100%;pointer-events:none}
 /* PAGE 2：雨城入口 */
 #p2{z-index:20;opacity:0;pointer-events:none;background:#071015}
 #p2.in{opacity:1;pointer-events:auto}
-#p2-bg{background-image:url('assets/city.png');z-index:1}
+#p2-bg{background-image:url('assets/city.webp');z-index:1}
 #p2 .veil{position:absolute;inset:0;z-index:4;background:linear-gradient(to bottom,rgba(0,0,0,.12),rgba(0,0,0,.1) 46%,rgba(2,5,9,.68) 100%),radial-gradient(circle at 50% 58%,rgba(210,225,222,.08),transparent 24%);}
 #p2-rain{z-index:3}
 #city-owls{position:absolute;inset:0;z-index:2;pointer-events:none}
-.owl-eye-pair{position:absolute;left:0;top:0;transform:translate(-50%,-50%);display:flex;gap:var(--eye-gap,8px);opacity:.28;filter:blur(.18px);animation:owlBlink 4.6s ease-in-out infinite}
-.owl-eye{width:var(--eye-size,10px);height:var(--eye-size,10px);border-radius:50%;background:rgba(243,236,191,.34);box-shadow:0 0 calc(var(--eye-size,10px)*.9) rgba(245,239,195,.22),0 0 calc(var(--eye-size,10px)*1.8) rgba(255,245,190,.1)}
-.owl-eye-pair.tiny .owl-eye{background:rgba(215,230,224,.16);box-shadow:0 0 7px rgba(210,230,225,.1)}
-.owl-eye-pair:nth-child(2){animation-delay:1.2s}.owl-eye-pair:nth-child(3){animation-delay:.6s}.owl-eye-pair:nth-child(4){animation-delay:2.1s}
-/* OWL SOFT BEAM：貓頭鷹柔霧光，不改座標，只讓光源更自然 */
-.owl-eye-pair{
-  overflow:visible;
-  isolation:isolate;
-}
-
+/* OWL GLOW：貓頭鷹眼睛發光。每顆眼睛依原圖實際量到的中心與大小定位 */
+.owl-eye-pair{position:absolute;left:0;top:0;width:0;height:0;overflow:visible;animation:owlBlink 7s ease-in-out infinite}
 .owl-eye{
-  position:relative;
+  position:absolute;
+  top:0;
   z-index:2;
-  background:rgba(248,231,190,.52);
+  width:var(--eye-size,14px);
+  height:var(--eye-size,14px);
+  border-radius:50%;
+  transform:translate(-50%,-50%);
+  background:radial-gradient(circle,
+    rgba(255,252,236,1) 0%,
+    rgba(255,238,188,.96) 40%,
+    rgba(255,216,146,.6) 72%,
+    rgba(255,216,146,0) 100%);
   box-shadow:
-    0 0 calc(var(--eye-size,10px)*1.1) rgba(250,236,195,.36),
-    0 0 calc(var(--eye-size,10px)*2.6) rgba(255,238,185,.22),
-    0 0 calc(var(--eye-size,10px)*4.2) rgba(255,232,170,.09);
+    0 0 calc(var(--eye-size,14px)*.7) rgba(255,238,185,.9),
+    0 0 calc(var(--eye-size,14px)*1.8) rgba(255,226,160,.6),
+    0 0 calc(var(--eye-size,14px)*3.6) rgba(255,214,140,.32);
+  animation:owlGlow 3.4s ease-in-out infinite;
 }
+.owl-eye:first-child{left:calc(var(--eye-dist,20px) / -2)}
+.owl-eye:last-child{left:calc(var(--eye-dist,20px) / 2)}
 
-owl-eye-pair::after{
+/* 眼睛周圍的大光暈 */
+.owl-eye-pair::after{
   content:"";
   position:absolute;
-  left:50%;
-  top:50%;
+  left:0;
+  top:0;
   z-index:1;
   pointer-events:none;
-  width:58px;
-  height:58px;
+  width:calc(var(--eye-dist,20px) * 5);
+  height:calc(var(--eye-dist,20px) * 3.6);
   transform:translate(-50%,-50%);
   border-radius:50%;
-  background:
-    radial-gradient(circle,
-      rgba(255,238,190,.28) 0%,
-      rgba(255,228,170,.16) 26%,
-      rgba(215,228,222,.08) 48%,
-      rgba(215,228,222,0) 72%);
-  filter:blur(10px);
-  mix-blend-mode:screen;
-  opacity:.26;
-  animation:owlBeamDrift 4.8s ease-in-out infinite;
+  background:radial-gradient(ellipse,
+    rgba(255,234,178,.62) 0%,
+    rgba(255,222,160,.3) 32%,
+    rgba(255,222,160,.1) 55%,
+    rgba(255,222,160,0) 72%);
+  filter:blur(6px);
+  animation:owlHalo 3.4s ease-in-out infinite;
 }
 
-/* 左、中、右三隻光束方向微調 */
-.owl-eye-pair:nth-child(1)::after{
-  width:54px;
-  height:54px;
-  opacity:.22;
-}
+/* 右上角石雕貓頭鷹：原圖眼睛是暗的，光弱一點，像隱約在看 */
+.owl-eye-pair.tiny .owl-eye{opacity:.6}
+.owl-eye-pair.tiny::after{--halo:.45}
 
-.owl-eye-pair:nth-child(2)::after{
-  width:62px;
-  height:62px;
-  opacity:.30;
-}
+.owl-eye-pair:nth-child(2),.owl-eye-pair:nth-child(2) .owl-eye,.owl-eye-pair:nth-child(2)::after{animation-delay:1.3s}
+.owl-eye-pair:nth-child(3),.owl-eye-pair:nth-child(3) .owl-eye,.owl-eye-pair:nth-child(3)::after{animation-delay:.6s}
+.owl-eye-pair:nth-child(4),.owl-eye-pair:nth-child(4) .owl-eye,.owl-eye-pair:nth-child(4)::after{animation-delay:2.4s}
 
-.owl-eye-pair:nth-child(3)::after{
-  width:54px;
-  height:54px;
-  opacity:.22;
+@keyframes owlGlow{
+  0%,100%{filter:brightness(1)}
+  50%{filter:brightness(1.3)}
 }
-
-/* tiny 那組先不要光束，避免右上角太亂 */
-.owl-eye-pair.tiny::after{
-  display:none;
+@keyframes owlHalo{
+  0%,100%{opacity:calc(var(--halo,1) * .7);transform:translate(-50%,-50%) scale(.94)}
+  50%{opacity:var(--halo,1);transform:translate(-50%,-50%) scale(1.14)}
 }
-
-@keyframes owlBeamDrift{
-  0%,100%{
-    opacity:.18;
-    filter:blur(9px);
-    transform:translate(-50%,-50%) scale(.92);
-  }
-  50%{
-    opacity:.34;
-    filter:blur(13px);
-    transform:translate(-50%,-50%) scale(1.12);
-  }
+/* 偶爾眨一下眼 */
+@keyframes owlBlink{
+  0%,88%,100%{transform:scaleY(1)}
+  90%{transform:scaleY(.08)}
+  92%{transform:scaleY(1)}
 }
-@keyframes owlBlink{0%,100%{opacity:.26;filter:blur(.2px)}8%{opacity:.55}10%{opacity:.1;transform:translate(-50%,-50%) scaleY(.32)}12%{opacity:.48;transform:translate(-50%,-50%) scaleY(1)}35%{opacity:.32}50%{opacity:.58}58%{opacity:.28}73%{opacity:.52}77%{opacity:.14;transform:translate(-50%,-50%) scaleY(.45)}80%{opacity:.36;transform:translate(-50%,-50%) scaleY(1)}}
 #city-btn{position:absolute;left:50%;bottom:clamp(46px,8vh,90px);z-index:5;transform:translateX(-50%);border:0;border-bottom:1px solid rgba(195,223,235,.38);background:rgba(2,6,10,.08);padding:15px 28px 11px;font-size:clamp(11px,1.3vw,14px);font-weight:300;letter-spacing:.2em;color:rgba(205,230,240,.82);cursor:none;animation:buttonPulse 2.9s ease-in-out infinite;backdrop-filter:blur(2px)}
 #city-btn:hover{color:rgba(245,252,255,.98);border-color:rgba(245,252,255,.62);text-shadow:0 0 24px rgba(210,235,248,.45)}
 @keyframes buttonPulse{0%,100%{opacity:.62;text-shadow:none}50%{opacity:1;text-shadow:0 0 24px rgba(205,232,245,.38)}}
@@ -645,11 +632,12 @@ owl-eye-pair::after{
 /* PAGE 3：霧林互動層 */
 #p3{z-index:10;opacity:0;pointer-events:none;background:#d8d8d2}
 #p3.in{opacity:1;pointer-events:auto}
-#p3-bg{background-image:url('assets/fog_forest.png');background-position:center;filter:saturate(.85) contrast(.96);}
+#p3-bg{background-image:url('assets/fog_forest.webp');background-position:center;filter:saturate(.85) contrast(.96);}
 #p3 .veil{position:absolute;inset:0;background:radial-gradient(circle at 50% 52%,rgba(255,255,255,.1),transparent 28%),linear-gradient(to bottom,rgba(240,244,242,.18),rgba(210,218,216,.08) 45%,rgba(110,130,135,.1) 100%);pointer-events:none}
 #map-title{position:absolute;top:32px;left:40px;z-index:4;pointer-events:none}
-#map-title .mt1{font-size:14pt;font-weight:500;letter-spacing:.25em;color:rgb(214,247,254)}
-#map-title .mt2{margin-top:6px;font-size:9pt;letter-spacing:.16em;color:rgba(214,247,254,.72)}
+#map-title .mt1{font-size:14pt;font-weight:500;letter-spacing:.25em;color:#263b43;text-shadow:0 0 12px rgba(255,255,255,.7),0 0 2px rgba(255,255,255,.5)}
+#map-title .mt2{margin-top:6px;font-size:9pt;letter-spacing:.16em;color:rgba(40,62,72,.78);text-shadow:0 0 10px rgba(255,255,255,.65)}
+#map-title .mt2-touch{display:none}
 .hot{position:absolute;z-index:5;transform:translate(-50%,-50%);cursor:none;border:0;background:none;padding:0}
 .hot-core{width:46px;height:46px;border-radius:50%;border:1px solid rgba(82,112,125,.18);display:flex;align-items:center;justify-content:center;transition:transform .35s ease,border-color .35s ease,box-shadow .35s ease;background:rgba(245,250,250,.03);backdrop-filter:blur(.6px)}
 .hot:hover .hot-core{transform:scale(1.42);border-color:rgba(75,105,120,.52);box-shadow:0 0 22px rgba(120,150,160,.18)}
@@ -664,7 +652,7 @@ owl-eye-pair::after{
 #ts-inner{position:relative;z-index:9;width:100%;max-width:1120px;padding:0 clamp(24px,5vw,72px) clamp(26px,5vh,52px);display:grid;grid-template-columns:1.04fr 1fr;gap:clamp(22px,4vw,48px);align-items:end}
 #ts-name{font-family:'Noto Serif TC',serif;font-style:normal;font-size:clamp(20px,2.25vw,34px);font-weight:300;line-height:1.12;letter-spacing:.08em;color:rgba(195,222,234,.86);margin-bottom:10px}
 #ts-terrain{font-size:9px;letter-spacing:.14em;color:rgba(115,150,165,.55);margin-bottom:16px}
-#ts-quote{font-size:clamp(10px,.88vw,13px);font-weight:300;line-height:2.35;letter-spacing:.05em;color:rgba(155,190,205,.82);white-space:pre-line;border-left:1px solid rgba(105,148,168,.22);padding-left:16px;text-shadow:0 0 14px rgba(160,200,220,.08)}
+#ts-quote{font-size:clamp(13px,1.05vw,16px);font-weight:300;line-height:2.2;letter-spacing:.05em;color:rgba(214,240,250,.92);white-space:pre-line;border-left:1px solid rgba(105,148,168,.22);padding-left:16px;text-shadow:0 0 14px rgba(160,200,220,.08)}
 #ts-data{padding-bottom:4px}
 .brow{display:flex;align-items:center;gap:8px;margin-bottom:12px}
 .blbl{width:76px;flex-shrink:0;font-size:9px;line-height:1.5;letter-spacing:.05em;color:rgba(120,155,170,.58)}
@@ -900,6 +888,70 @@ owl-eye-pair::after{
   transition:color 2.2s ease 1.2s;
 }
 
+/* BORDER WARNING SCARE：一撞到邊界就瞬間黑幕＋閃光＋震動，沒有淡入延遲 */
+#border-warning.show{
+  transition:none;
+}
+
+#border-warning::before{
+  content:"";
+  position:absolute;
+  inset:0;
+  background:radial-gradient(circle at 50% 48%,rgba(245,250,252,.95),rgba(190,210,220,.55) 45%,rgba(0,0,0,0) 80%);
+  opacity:0;
+  pointer-events:none;
+}
+
+#border-warning.show::before{
+  animation:bwFlash .5s ease-out;
+}
+
+@keyframes bwFlash{
+  0%{opacity:1}
+  18%{opacity:.15}
+  30%{opacity:.7}
+  100%{opacity:0}
+}
+
+#border-warning.show #bw-inner{
+  animation:bwShake .7s cubic-bezier(.36,.07,.19,.97);
+}
+
+@keyframes bwShake{
+  0%{transform:translate(0,-2vh) scale(1.25)}
+  10%{transform:translate(-14px,calc(-2vh + 6px)) scale(1.12)}
+  20%{transform:translate(12px,calc(-2vh - 5px)) scale(1.06)}
+  30%{transform:translate(-10px,calc(-2vh + 4px))}
+  40%{transform:translate(8px,calc(-2vh - 3px))}
+  55%{transform:translate(-5px,-2vh)}
+  70%{transform:translate(3px,-2vh)}
+  100%{transform:translate(0,-2vh)}
+}
+
+#bw-count.thump{
+  animation:bwThump .45s ease-out;
+}
+
+@keyframes bwThump{
+  0%{transform:scale(1.35);text-shadow:0 0 80px rgba(230,245,250,.8)}
+  100%{transform:scale(1);text-shadow:0 0 44px rgba(210,235,245,.36)}
+}
+
+/* 手機：地圖光點沒有滑鼠可以移上去，地名直接顯示 */
+@media (max-width:760px){
+  .hot-name{
+    color:rgba(40,62,72,.82) !important;
+    font-size:11px;
+  }
+
+  #map-title .mt2-hover{display:none}
+  #map-title .mt2-touch{display:inline}
+
+  #ts-quote{
+    font-size:14px;
+  }
+}
+
 /* 手機版不啟用邊境黑幕 */
 @media (max-width:760px){
   #border-warning{
@@ -1028,10 +1080,10 @@ owl-eye-pair::after{
   <div id="p2-bg" class="bg-img"></div>
   <canvas id="p2-rain" class="fx"></canvas>
 <div id="city-owls">
-  <div class="owl-eye-pair big" data-x="254" data-y="529" data-gap="37" data-size="13"><span class="owl-eye"></span><span class="owl-eye"></span></div>
-  <div class="owl-eye-pair small" data-x="1013" data-y="487" data-gap="23" data-size="10"><span class="owl-eye"></span><span class="owl-eye"></span></div>
-  <div class="owl-eye-pair big" data-x="1680" data-y="529" data-gap="39" data-size="13"><span class="owl-eye"></span><span class="owl-eye"></span></div>
-  <div class="owl-eye-pair tiny" data-x="1922" data-y="214" data-gap="34" data-size="6"><span class="owl-eye"></span><span class="owl-eye"></span></div>
+  <div class="owl-eye-pair big" data-x="273.1" data-y="527.9" data-dist="38.8" data-size="22"><span class="owl-eye"></span><span class="owl-eye"></span></div>
+  <div class="owl-eye-pair small" data-x="1012.5" data-y="487" data-dist="21" data-size="17"><span class="owl-eye"></span><span class="owl-eye"></span></div>
+  <div class="owl-eye-pair big" data-x="1663.3" data-y="529.5" data-dist="36.5" data-size="24"><span class="owl-eye"></span><span class="owl-eye"></span></div>
+  <div class="owl-eye-pair tiny" data-x="1935.4" data-y="214.6" data-dist="29.2" data-size="13"><span class="owl-eye"></span><span class="owl-eye"></span></div>
 </div>
   <div class="veil"></div>
   <button id="city-btn" type="button">在陰鬱街道下，隱藏的是甦醒的惡…</button>
@@ -1041,7 +1093,7 @@ owl-eye-pair::after{
   <div id="p3-bg" class="bg-img"></div>
   <canvas id="p3-fog" class="fx"></canvas>
   <div class="veil"></div>
-  <div id="map-title"><div class="mt1">靡獸國</div><div class="mt2">靠近光點・探索各地</div></div>
+  <div id="map-title"><div class="mt1">靡獸國</div><div class="mt2"><span class="mt2-hover">靠近光點・探索各地</span><span class="mt2-touch">輕觸光點・探索各地</span></div></div>
   <button class="hot" style="left:52%;top:50%" data-zone="中泱"><span class="hot-core"><span class="hot-drop"></span></span><span class="hot-name">中泱</span></button>
   <button class="hot" style="left:20%;top:57%" data-zone="遺窠"><span class="hot-core"><span class="hot-drop"></span></span><span class="hot-name">遺窠</span></button>
   <button class="hot" style="left:76%;top:44%" data-zone="霏煙"><span class="hot-core"><span class="hot-drop"></span></span><span class="hot-name">霏煙</span></button>
@@ -1340,19 +1392,111 @@ function bindBorderCursorState() {
 }
 
 bindBorderCursorState();
-/* BORDER WARNING TEST：只供手動測試，不自動觸發 */
+/* BORDER WARNING：撞到邊界 → 瞬間黑幕＋大聲警告 → 失去記憶 → 回到第一頁 */
 let borderWarningTimers = [];
-let warnSound = null; // 建立全域音效變數
+
+/* 警告音：開網頁後第一次點擊就先把音檔載好、解碼好，撞邊界時零延遲播放 */
+const WARN_SRC = 'assets/warning_loud.mp3';
+const warnAudioEl = new Audio(WARN_SRC);
+warnAudioEl.preload = 'auto';
+let warnCtx = null;
+let warnBuf = null;
+let warnNode = null;
+
+function unlockWarnAudio() {
+  try {
+    if (!warnCtx) {
+      const AC = window.AudioContext || window.webkitAudioContext;
+      if (!AC) return;
+      warnCtx = new AC();
+      fetch(WARN_SRC)
+        .then(r => r.arrayBuffer())
+        .then(b => warnCtx.decodeAudioData(b))
+        .then(buf => { warnBuf = buf; })
+        .catch(() => {});
+    }
+    if (warnCtx.state === 'suspended') warnCtx.resume();
+  } catch (e) {}
+}
+window.addEventListener('pointerdown', unlockWarnAudio, true);
+
+function playWarnSound() {
+  stopWarnSound();
+
+  if (warnCtx && warnBuf) {
+    if (warnCtx.state === 'suspended') warnCtx.resume();
+    const src = warnCtx.createBufferSource();
+    src.buffer = warnBuf;
+    /* 再推大一點音量，後面接壓縮器避免破音 */
+    const gain = warnCtx.createGain();
+    gain.gain.value = 1.8;
+    const comp = warnCtx.createDynamicsCompressor();
+    comp.threshold.value = -8;
+    comp.knee.value = 2;
+    comp.ratio.value = 20;
+    comp.attack.value = 0.001;
+    comp.release.value = 0.08;
+    src.connect(gain).connect(comp).connect(warnCtx.destination);
+    src.start(0);
+    warnNode = src;
+    return;
+  }
+
+  /* 備用：瀏覽器不支援 Web Audio 或還沒解碼完 */
+  warnAudioEl.currentTime = 0;
+  warnAudioEl.volume = 1;
+  warnAudioEl.play().catch(() => {});
+}
+
+function stopWarnSound() {
+  if (warnNode) {
+    try { warnNode.stop(); } catch (e) {}
+    warnNode = null;
+  }
+  warnAudioEl.pause();
+  warnAudioEl.currentTime = 0;
+}
 
 function clearBorderWarningTimers() {
   borderWarningTimers.forEach(t => clearTimeout(t));
   borderWarningTimers = [];
-  
-  // 如果有音效正在播，強制暫停並歸零
-  if (warnSound) {
-    warnSound.pause();
-    warnSound.currentTime = 0;
-  }
+  stopWarnSound();
+}
+
+function thumpCount(count, n) {
+  count.textContent = n;
+  count.classList.remove('thump');
+  void count.offsetWidth;
+  count.classList.add('thump');
+}
+
+/* 失去記憶後：整個網站回到第一頁開場 */
+function resetToStart() {
+  const p1 = document.getElementById('p1');
+  const p2 = document.getElementById('p2');
+  const p3 = document.getElementById('p3');
+
+  closeZone();
+
+  p3.classList.remove('in');
+  p2.classList.remove('in', 'out');
+  p2.style.display = '';
+  p1.classList.remove('out');
+  p1.style.display = '';
+
+  paras.forEach(p => {
+    p.textContent = '';
+    p.classList.remove('myth-line', 'reveal');
+  });
+
+  hint1.classList.remove('gone');
+  hint1.style.display = '';
+  enter1.classList.remove('show');
+
+  introStarted = false;
+  introFinished = false;
+
+  cur.classList.remove('border-near', 'border-hit');
 }
 
 window.previewBorderWarning = function () {
@@ -1361,71 +1505,52 @@ window.previewBorderWarning = function () {
 
   if (!bw || !count) return;
 
-  /* 手機版不測試、不啟用 */
+  /* 手機版不啟用 */
   if (!window.matchMedia('(min-width: 761px)').matches) return;
 
+  /* 警告進行中不重複觸發 */
+  if (bw.classList.contains('show')) return;
+
   clearBorderWarningTimers();
+
+  playWarnSound();
 
   bw.classList.remove('forgot');
   bw.classList.add('show');
   bw.setAttribute('aria-hidden', 'false');
-  count.textContent = '3';
-  
-  // 建立音效並開始播放 (確保你把檔案放在 assets/warning.mp3)
-  warnSound = new Audio('assets/warning.mp3');
-  warnSound.loop = false; // 絕對不重播
-  warnSound.play().catch(e => console.log("等待互動後才能播放音效", e));
+  thumpCount(count, '3');
 
-  borderWarningTimers.push(setTimeout(() => {
-    count.textContent = '2';
-  }, 1300));
-
-  borderWarningTimers.push(setTimeout(() => {
-    count.textContent = '1';
-  }, 2600));
+  borderWarningTimers.push(setTimeout(() => thumpCount(count, '2'), 1300));
+  borderWarningTimers.push(setTimeout(() => thumpCount(count, '1'), 2600));
 
   borderWarningTimers.push(setTimeout(() => {
     bw.classList.add('forgot');
-    
-    // 第 3.3 秒畫面變黑的瞬間，切斷音效
-    if (warnSound) {
-      warnSound.pause();
-      warnSound.currentTime = 0;
-    }
+    /* 第 3.3 秒畫面變黑的瞬間，切斷音效 */
+    stopWarnSound();
   }, 3300));
+
+  /* 「你已忘了自己為何而來。」停留幾秒後，回到第一頁 */
+  borderWarningTimers.push(setTimeout(() => {
+    resetToStart();
+    bw.classList.remove('show');
+    bw.setAttribute('aria-hidden', 'true');
+  }, 8800));
+
+  /* 黑幕淡出完才清掉狀態，避免警告字閃回來 */
+  borderWarningTimers.push(setTimeout(() => {
+    bw.classList.remove('forgot');
+    count.textContent = '3';
+    count.classList.remove('thump');
+  }, 10200));
 };
-
-window.resetBorderWarning = function () {
-  const bw = document.getElementById('border-warning');
-  const count = document.getElementById('bw-count');
-
-  if (!bw || !count) return;
-
-  clearBorderWarningTimers();
-
-  bw.classList.remove('show', 'forgot');
-  bw.setAttribute('aria-hidden', 'true');
-  count.textContent = '3';
-};
-/* BORDER WARNING KEY TEST：B = 顯示黑幕，R = 重置 */
-window.addEventListener('keydown', e => {
-  const key = e.key.toLowerCase();
-
-  if (key === 'b') {
-    window.previewBorderWarning();
-  }
-
-  if (key === 'r') {
-    window.resetBorderWarning();
-  }
-});
 const CITY_IMG={w:2048,h:1152};
+const CITY_BG_ZOOM=1.025; /* 跟 .bg-img 的 transform:scale(1.025) 一致 */
 function positionCityOwlEyes(){
   const layer=document.getElementById('city-owls');
   if(!layer)return;
   const vw=window.innerWidth;
   const vh=window.innerHeight;
-  const scale=Math.max(vw/CITY_IMG.w,vh/CITY_IMG.h);
+  const scale=Math.max(vw/CITY_IMG.w,vh/CITY_IMG.h)*CITY_BG_ZOOM;
   const drawW=CITY_IMG.w*scale;
   const drawH=CITY_IMG.h*scale;
   const offsetX=(vw-drawW)/2;
@@ -1433,12 +1558,12 @@ function positionCityOwlEyes(){
   layer.querySelectorAll('.owl-eye-pair').forEach(el=>{
     const x=Number(el.dataset.x);
     const y=Number(el.dataset.y);
-    const gap=Number(el.dataset.gap||8);
-    const size=Number(el.dataset.size||10);
+    const dist=Number(el.dataset.dist||20);
+    const size=Number(el.dataset.size||14);
     el.style.left=(offsetX+x*scale)+'px';
     el.style.top=(offsetY+y*scale)+'px';
-    el.style.setProperty('--eye-gap',(gap*scale)+'px');
-    el.style.setProperty('--eye-size',(size*Math.min(Math.max(scale,.72),1.18))+'px');
+    el.style.setProperty('--eye-dist',(dist*scale)+'px');
+    el.style.setProperty('--eye-size',(size*scale)+'px');
   });
 }
 positionCityOwlEyes();
