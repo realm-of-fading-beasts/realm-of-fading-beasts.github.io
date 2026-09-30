@@ -1121,6 +1121,110 @@ const cur=document.getElementById('cur');const ring=document.getElementById('cur
 window.addEventListener('pointermove',e=>{cur.style.setProperty('--cur-x',e.clientX+'px');cur.style.setProperty('--cur-y',e.clientY+'px');});
 function clickFX(x,y,root=document.body){const wave=document.createElement('span');wave.className='ripple-click';wave.style.left=x+'px';wave.style.top=y+'px';root.appendChild(wave);setTimeout(()=>wave.remove(),760);for(let i=0;i<12;i++){const s=document.createElement('span');s.className='spark';const a=Math.random()*Math.PI*2;const d=22+Math.random()*46;const size=2+Math.random()*3;s.style.cssText=`left:${x}px;top:${y}px;width:${size}px;height:${size}px;background:rgba(190,220,234,${.34+Math.random()*.42});--tx:${Math.cos(a)*d}px;--ty:${Math.sin(a)*d}px`;root.appendChild(s);setTimeout(()=>s.remove(),780);}}
 
+/* ===== 音效盒：第一次點擊時載入所有音效，之後零延遲播放 ===== */
+const SFX = {
+  ctx: null,
+  bufs: {},
+  loops: {},
+  files: {
+    drop: 'assets/sfx/drop.mp3',
+    key1: 'assets/sfx/key1.mp3',
+    key2: 'assets/sfx/key2.mp3',
+    key3: 'assets/sfx/key3.mp3',
+    key4: 'assets/sfx/key4.mp3',
+    rain: 'assets/sfx/rain_city.mp3',
+    beast: 'assets/sfx/beast.mp3',
+    warn: 'assets/warning_loud.mp3'
+  }
+};
+
+/* 各音效音量（0～1），想調大調小改這裡 */
+const SFX_VOL = {
+  drop: 0.9,
+  key: 0.45,
+  rain: 0.6,
+  beast: 0.5
+};
+
+function sfxUnlock() {
+  try {
+    if (!SFX.ctx) {
+      const AC = window.AudioContext || window.webkitAudioContext;
+      if (!AC) return;
+      SFX.ctx = new AC();
+      Object.entries(SFX.files).forEach(([name, url]) => {
+        fetch(url)
+          .then(r => r.arrayBuffer())
+          .then(b => SFX.ctx.decodeAudioData(b))
+          .then(buf => { SFX.bufs[name] = buf; })
+          .catch(() => {});
+      });
+    }
+    if (SFX.ctx.state === 'suspended') SFX.ctx.resume();
+  } catch (e) {}
+}
+window.addEventListener('pointerdown', sfxUnlock, true);
+
+function sfxPlay(name, vol = 1, rate = 1) {
+  const ctx = SFX.ctx;
+  const buf = SFX.bufs[name];
+  if (!ctx || !buf) return;
+  const src = ctx.createBufferSource();
+  src.buffer = buf;
+  src.playbackRate.value = rate;
+  const g = ctx.createGain();
+  g.gain.value = vol;
+  src.connect(g).connect(ctx.destination);
+  src.start(0);
+}
+
+/* 環境音：循環播放，淡入 */
+function sfxLoopStart(name, vol, fadeIn = 2.5, tries = 0) {
+  const ctx = SFX.ctx;
+  if (!ctx) return;
+  if (SFX.loops[name]) return;
+  const buf = SFX.bufs[name];
+  if (!buf) {
+    /* 音檔還在下載，稍等再試 */
+    if (tries < 40) setTimeout(() => sfxLoopStart(name, vol, fadeIn, tries + 1), 250);
+    return;
+  }
+  const src = ctx.createBufferSource();
+  src.buffer = buf;
+  src.loop = true;
+  const g = ctx.createGain();
+  const now = ctx.currentTime;
+  g.gain.setValueAtTime(0.0001, now);
+  g.gain.linearRampToValueAtTime(vol, now + fadeIn);
+  src.connect(g).connect(ctx.destination);
+  src.start(0);
+  SFX.loops[name] = { src, g };
+}
+
+/* 環境音：淡出後停止 */
+function sfxLoopStop(name, fadeOut = 1.5) {
+  const ctx = SFX.ctx;
+  const loop = SFX.loops[name];
+  if (!ctx || !loop) return;
+  delete SFX.loops[name];
+  const now = ctx.currentTime;
+  loop.g.gain.cancelScheduledValues(now);
+  loop.g.gain.setValueAtTime(loop.g.gain.value, now);
+  loop.g.gain.linearRampToValueAtTime(0.0001, now + fadeOut);
+  try { loop.src.stop(now + fadeOut + 0.05); } catch (e) {}
+}
+
+/* 打字聲：每個字敲一下，太快時略過，避免變成嗡嗡聲 */
+let lastKeyAt = 0;
+function sfxKey(ch) {
+  if (!ch || /\s/.test(ch)) return;
+  const t = performance.now();
+  if (t - lastKeyAt < 55) return;
+  lastKeyAt = t;
+  const n = 1 + Math.floor(Math.random() * 4);
+  sfxPlay('key' + n, SFX_VOL.key * (0.75 + Math.random() * 0.35), 0.92 + Math.random() * 0.16);
+}
+
 const paras = [...document.querySelectorAll('#p1 .para')];
 const hint1 = document.getElementById('hint1');
 const enter1 = document.getElementById('enter1');
@@ -1145,6 +1249,7 @@ function typeText(el, text, speed = 34) {
 
     const timer = setInterval(() => {
       el.textContent = text.slice(0, i);
+      sfxKey(text[i - 1]);
       i++;
 
       if (i > text.length) {
@@ -1232,9 +1337,13 @@ function goP2() {
 
   p1.classList.add('out');
 
+  /* 聲音分開出現：先只有水滴聲，換到雨城後才出現雨聲與腳步 */
+  sfxPlay('drop', SFX_VOL.drop);
+
   setTimeout(() => {
     p1.style.display = 'none';
     p2.classList.add('in');
+    sfxLoopStart('rain', SFX_VOL.rain, 2.5);
   }, 1500);
 }
 
@@ -1248,9 +1357,14 @@ function goP3() {
 
   p2.classList.add('out');
 
+  /* 聲音分開出現：雨聲先收掉，只剩水滴聲，換到地圖後才出現獸音 */
+  sfxLoopStop('rain', 0.25);
+  setTimeout(() => sfxPlay('drop', SFX_VOL.drop), 250);
+
   setTimeout(() => {
     p2.style.display = 'none';
     p3.classList.add('in');
+    sfxLoopStart('beast', SFX_VOL.beast, 3);
   }, 1500);
 }
 /* 點擊水滴漣漪：第二頁、第三頁啟用；第四頁說明面板不啟用 */
@@ -1395,48 +1509,34 @@ bindBorderCursorState();
 /* BORDER WARNING：撞到邊界 → 瞬間黑幕＋大聲警告 → 失去記憶 → 回到第一頁 */
 let borderWarningTimers = [];
 
-/* 警告音：開網頁後第一次點擊就先把音檔載好、解碼好，撞邊界時零延遲播放 */
+/* 警告音：用下面的音效盒，撞邊界時零延遲播放 */
 const WARN_SRC = 'assets/warning_loud.mp3';
 const warnAudioEl = new Audio(WARN_SRC);
 warnAudioEl.preload = 'auto';
-let warnCtx = null;
-let warnBuf = null;
 let warnNode = null;
-
-function unlockWarnAudio() {
-  try {
-    if (!warnCtx) {
-      const AC = window.AudioContext || window.webkitAudioContext;
-      if (!AC) return;
-      warnCtx = new AC();
-      fetch(WARN_SRC)
-        .then(r => r.arrayBuffer())
-        .then(b => warnCtx.decodeAudioData(b))
-        .then(buf => { warnBuf = buf; })
-        .catch(() => {});
-    }
-    if (warnCtx.state === 'suspended') warnCtx.resume();
-  } catch (e) {}
-}
-window.addEventListener('pointerdown', unlockWarnAudio, true);
 
 function playWarnSound() {
   stopWarnSound();
 
-  if (warnCtx && warnBuf) {
-    if (warnCtx.state === 'suspended') warnCtx.resume();
-    const src = warnCtx.createBufferSource();
-    src.buffer = warnBuf;
+  /* 警告前先把環境音瞬間切掉，安靜一瞬再爆出來更嚇人 */
+  sfxLoopStop('beast', 0.05);
+
+  const ctx = SFX.ctx;
+  const buf = SFX.bufs.warn;
+  if (ctx && buf) {
+    if (ctx.state === 'suspended') ctx.resume();
+    const src = ctx.createBufferSource();
+    src.buffer = buf;
     /* 再推大一點音量，後面接壓縮器避免破音 */
-    const gain = warnCtx.createGain();
+    const gain = ctx.createGain();
     gain.gain.value = 1.8;
-    const comp = warnCtx.createDynamicsCompressor();
+    const comp = ctx.createDynamicsCompressor();
     comp.threshold.value = -8;
     comp.knee.value = 2;
     comp.ratio.value = 20;
     comp.attack.value = 0.001;
     comp.release.value = 0.08;
-    src.connect(gain).connect(comp).connect(warnCtx.destination);
+    src.connect(gain).connect(comp).connect(ctx.destination);
     src.start(0);
     warnNode = src;
     return;
@@ -1477,6 +1577,9 @@ function resetToStart() {
   const p3 = document.getElementById('p3');
 
   closeZone();
+
+  sfxLoopStop('rain', 0.5);
+  sfxLoopStop('beast', 0.5);
 
   p3.classList.remove('in');
   p2.classList.remove('in', 'out');
