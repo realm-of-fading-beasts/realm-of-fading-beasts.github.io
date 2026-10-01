@@ -1128,7 +1128,10 @@ const SFX = {
   loops: {},
   files: {
     rain: 'assets/sfx/rain_city.mp3',
-    forest: 'assets/sfx/forest.mp3',
+    bird: 'assets/sfx/bird.mp3',
+    windLeaves: 'assets/sfx/wind_leaves.mp3',
+    drop: 'assets/sfx/drop.mp3',
+    typing: 'assets/sfx/typing.mp3',
     warn: 'assets/warning_loud.mp3'
   }
 };
@@ -1136,24 +1139,113 @@ const SFX = {
 /* 各音效音量（0～1），想調大調小改這裡 */
 const SFX_VOL = {
   rain: 0.4,
-  forest: 0.275
+  bird: 0.12,
+  birdSoft: 0.06,
+  windLeaves: 0.09,
+  drop: 0.7,
+  typing: 0.45
 };
+
+/* 地圖頁：鳥叫三種輪流 → 叫完等 1 秒 → 吹一陣風 → 等下一次鳥叫
+   第一種：大聲一聲
+   第二種：小聲一聲
+   第三種：大聲一聲，停 1.5 秒，再小聲一聲 */
+const BIRD_EVERY_MS = 15000;   /* 每次鳥叫開始之間隔幾毫秒 */
+const BIRD_LEN_MS = 1050;      /* 一聲鳥叫多長 */
+const BIRD_GAP_MS = 1500;      /* 第三種：大聲和小聲中間停多久 */
+const WIND_AFTER_MS = 1000;    /* 鳥叫完多久開始吹風 */
+let birdTimer = null;
+let birdSteps = [];
+let birdTurn = 0;
+
+function birdCycle() {
+  const kind = birdTurn % 3;
+  birdTurn++;
+  let end = BIRD_LEN_MS;
+  if (kind === 0) {
+    sfxPlay('bird', SFX_VOL.bird);
+  } else if (kind === 1) {
+    sfxPlay('bird', SFX_VOL.birdSoft);
+  } else {
+    sfxPlay('bird', SFX_VOL.bird);
+    const softAt = BIRD_LEN_MS + BIRD_GAP_MS;
+    birdSteps.push(setTimeout(() => sfxPlay('bird', SFX_VOL.birdSoft), softAt));
+    end = softAt + BIRD_LEN_MS;
+  }
+  birdSteps.push(setTimeout(() => sfxPlay('windLeaves', SFX_VOL.windLeaves), end + WIND_AFTER_MS));
+}
+
+function birdStart() {
+  birdStop();
+  birdTurn = 0;
+  birdCycle();
+  birdTimer = setInterval(birdCycle, BIRD_EVERY_MS);
+}
+function birdStop() {
+  if (birdTimer) clearInterval(birdTimer);
+  birdTimer = null;
+  birdSteps.forEach(t => clearTimeout(t));
+  birdSteps = [];
+}
+
+/* 網頁一打開就先把音效載好（還不會出聲），第一次點擊時才打開喇叭，
+   這樣第一下的水滴聲不會因為還在下載而沒聲音或慢半拍 */
+function sfxInit() {
+  try {
+    if (SFX.ctx) return;
+    const AC = window.AudioContext || window.webkitAudioContext;
+    if (!AC) return;
+    SFX.ctx = new AC();
+    Object.entries(SFX.files).forEach(([name, url]) => {
+      fetch(url)
+        .then(r => r.arrayBuffer())
+        .then(b => new Promise((ok, fail) => SFX.ctx.decodeAudioData(b, ok, fail)))
+        .then(buf => { SFX.bufs[name] = buf; })
+        .catch(() => {});
+    });
+  } catch (e) {}
+}
+sfxInit();
+
+/* 藍牙耳機遇到安靜會打瞌睡，下一個聲音的開頭會被吃掉（水滴聲就整個不見）。
+   第一次點擊後放一條幾乎聽不到的極小聲沙沙聲，讓耳機一直醒著 */
+const KEEP_AWAKE_VOL = 0.0006;
+function sfxKeepAwake() {
+  const ctx = SFX.ctx;
+  if (!ctx || SFX.awake) return;
+  const len = ctx.sampleRate * 2;
+  const buf = ctx.createBuffer(1, len, ctx.sampleRate);
+  const d = buf.getChannelData(0);
+  let last = 0;
+  for (let i = 0; i < len; i++) {
+    last = last * 0.97 + (Math.random() * 2 - 1) * 0.03;
+    d[i] = last * 8;
+  }
+  const src = ctx.createBufferSource();
+  src.buffer = buf;
+  src.loop = true;
+  const g = ctx.createGain();
+  g.gain.value = KEEP_AWAKE_VOL;
+  src.connect(g).connect(ctx.destination);
+  src.start(0);
+  SFX.awake = src;
+  SFX.awakeAt = performance.now();
+}
+
+/* 水滴：網頁第一下點擊時耳機還沒醒，等它醒（約 0.7 秒）再滴，之後都立刻滴 */
+const EARPHONE_WAKE_MS = 700;
+function sfxDrop() {
+  const since = performance.now() - (SFX.awakeAt || 0);
+  const delay = Math.max(0, EARPHONE_WAKE_MS - since);
+  if (delay > 0) setTimeout(() => sfxPlay('drop', SFX_VOL.drop), delay);
+  else sfxPlay('drop', SFX_VOL.drop);
+}
 
 function sfxUnlock() {
   try {
-    if (!SFX.ctx) {
-      const AC = window.AudioContext || window.webkitAudioContext;
-      if (!AC) return;
-      SFX.ctx = new AC();
-      Object.entries(SFX.files).forEach(([name, url]) => {
-        fetch(url)
-          .then(r => r.arrayBuffer())
-          .then(b => SFX.ctx.decodeAudioData(b))
-          .then(buf => { SFX.bufs[name] = buf; })
-          .catch(() => {});
-      });
-    }
-    if (SFX.ctx.state === 'suspended') SFX.ctx.resume();
+    if (!SFX.ctx) sfxInit();
+    if (SFX.ctx && SFX.ctx.state === 'suspended') SFX.ctx.resume();
+    sfxKeepAwake();
   } catch (e) {}
 }
 window.addEventListener('pointerdown', sfxUnlock, true);
@@ -1219,7 +1311,20 @@ function wait(ms) {
   return new Promise(resolve => setTimeout(resolve, ms));
 }
 
-function typeText(el, text, speed = 34) {
+/* 打字錄音（typing.mp3，7 秒）裡每一下按鍵出現的時間（毫秒）。
+   字就踩著這些時間一個一個跑出來：喀一聲，出一個字 */
+const TYPING_LOOP_MS = 7000;
+const TYPING_KEY_MS = [55, 210, 354, 454, 639, 828, 933, 1028, 1122, 1287, 1392, 1492, 1761, 1951, 2135, 2345, 2454, 2569, 2669, 2764, 2863, 2988, 3083, 3248, 3432, 3587, 3687, 3826, 4021, 4280, 4425, 4689, 4824, 4919, 5049, 5183, 5308, 5413, 5517, 5692, 5877, 6021, 6226, 6351, 6595];
+
+function typedCountAt(ms) {
+  const loops = Math.floor(ms / TYPING_LOOP_MS);
+  const inLoop = ms - loops * TYPING_LOOP_MS;
+  let n = 0;
+  while (n < TYPING_KEY_MS.length && TYPING_KEY_MS[n] <= inLoop) n++;
+  return loops * TYPING_KEY_MS.length + n;
+}
+
+function typeText(el, text) {
   return new Promise(resolve => {
     if (!el) {
       resolve();
@@ -1227,23 +1332,30 @@ function typeText(el, text, speed = 34) {
     }
 
     el.textContent = '';
-    let i = 0;
+
+    /* 打字聲和字一起開始，這段字打完就停 */
+    sfxLoopStart('typing', SFX_VOL.typing, 0.02);
+    const t0 = performance.now();
 
     const timer = setInterval(() => {
-      el.textContent = text.slice(0, i);
-      i++;
+      const n = Math.min(text.length, typedCountAt(performance.now() - t0));
+      if (el.textContent.length !== n) el.textContent = text.slice(0, n);
 
-      if (i > text.length) {
+      if (n >= text.length) {
         clearInterval(timer);
+        sfxLoopStop('typing', 0.12);
         resolve();
       }
-    }, speed);
+    }, 10);
   });
 }
       /* 進入按鈕 */
 async function startIntro() {
   if (introStarted) return;
   introStarted = true;
+
+  /* 第一頁按下去：滴一顆水 */
+  sfxDrop();
 
   if (hint1) {
     hint1.classList.add('gone');
@@ -1318,7 +1430,8 @@ function goP2() {
 
   p1.classList.add('out');
 
-  /* 聲音分開出現：換到雨城後才出現雨聲 */
+  /* 聲音分開出現：先滴水，換到雨城後才出現雨聲 */
+  sfxDrop();
   setTimeout(() => {
     p1.style.display = 'none';
     p2.classList.add('in');
@@ -1336,13 +1449,14 @@ function goP3() {
 
   p2.classList.add('out');
 
-  /* 聲音分開出現：雨聲先收掉，換到地圖後才出現蟲鳴鳥叫 */
+  /* 聲音分開出現：雨聲先收掉、滴水，換到地圖後鳥才偶爾叫一聲 */
   sfxLoopStop('rain', 0.25);
+  setTimeout(sfxDrop, 250);
 
   setTimeout(() => {
     p2.style.display = 'none';
     p3.classList.add('in');
-    sfxLoopStart('forest', SFX_VOL.forest, 3);
+    birdStart();
   }, 1500);
 }
 /* 點擊水滴漣漪：第二頁、第三頁啟用；第四頁說明面板不啟用 */
@@ -1496,8 +1610,8 @@ let warnNode = null;
 function playWarnSound() {
   stopWarnSound();
 
-  /* 警告前先把地圖的蟲鳴鳥叫瞬間切掉，安靜一瞬再爆出來更嚇人 */
-  sfxLoopStop('forest', 0.05);
+  /* 警告前先讓地圖的鳥叫停掉，安靜一瞬再爆出來更嚇人 */
+  birdStop();
 
   const ctx = SFX.ctx;
   const buf = SFX.bufs.warn;
@@ -1556,8 +1670,9 @@ function resetToStart() {
 
   closeZone();
 
+  sfxLoopStop('typing', 0.3);
   sfxLoopStop('rain', 0.5);
-  sfxLoopStop('forest', 0.5);
+  birdStop();
 
   p3.classList.remove('in');
   p2.classList.remove('in', 'out');
